@@ -1,0 +1,103 @@
+#!/bin/bash
+set -e
+
+#get flahsers directory on the laptop
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VERSION="2.3.0"
+BUILD_NUM="12617"
+BASE_OS="Ubuntu_22.04"
+DOCKER_IMAGE="sdkmanager-$VERSION.$BUILD_NUM-${BASE_OS}_docker.tar.gz"
+
+# searches the assets directory for image then loads its, otherwise asks 
+# prompts user to follow file downloading instructions
+try_load_image () {
+    #if image does not exist check if it is in the assets folder
+    if [ ! -f "$DIR/assets/$DOCKER_IMAGE" ]; then
+        echo "the nesscary docker image is not found"
+        echo "you need to download it, instructions in README.md"
+        echo "once you have downloaded it, place it in : "
+        echo "$DIR/assets"
+        exit 1
+    else
+        echo "image tar.gz found, begining loading process"
+        echo ""
+        docker load -i "$DIR/assets/$DOCKER_IMAGE"
+    fi
+}
+
+# searches the available docker images for the sdkmanager image
+image_search () {
+    #check if we already have the image loaded
+    images_list=($(docker images --format "{{.Repository}}:{{.Tag}}"))
+    found_image="false"
+    
+    for img in "${images_list[@]}"; do
+        if [ "$img" = "sdkmanager:$VERSION.$BUILD_NUM-$BASE_OS" ] ; then
+            echo "image found on device"
+            found_image="true"
+        fi
+    done
+    
+    if [ "$found_image" = "false" ] ; then
+        echo "image is not found, searching for $DOCKER_IMAGE file in assets"
+        try_load_image 
+    fi
+
+}
+
+gui_mode () {
+    echo "starting flashing process in gui mode"
+    image_search
+    echo "run the sdkmanager command in the terminal"
+    docker run -it --rm \
+        --cap-add=SYS_ADMIN \
+        --security-opt seccomp=unconfined \
+        --env DISPLAY=$DISPLAY \
+        --env QT_X11_NO_MITSHM=1 \
+        --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
+        --entrypoint /bin/bash \
+        "sdkmanager:$VERSION.$BUILD_NUM-$BASE_OS"
+}
+
+cli_mode () {
+    echo "starting flash process in cli mode"
+    image_search 
+    echo "starting up docker image in cli mode"
+}
+
+clean_up () {
+    echo "clean up function"
+}
+
+
+echo "============================================================================================"
+echo " "
+cat "$DIR/assets/title.txt"
+echo " "
+echo "============================================================================================"
+echo "option : "
+echo " "
+echo "1. start the nvidia jetson sdk in gui mode"
+echo " "
+echo "2. start automated cli process "
+echo " "
+echo "3. clean up (delets all the downloaded docker files)"
+echo " "
+echo "4. quit"
+echo " "
+read -p "select : " choice
+echo " "
+
+
+if [ "$choice" = '1' ]; then
+    gui_mode 
+elif [ "$choice" = '2' ]; then
+    cli_mode 
+elif [ "$choice" = '3' ]; then
+    clean_up 
+elif [ "$choice" = '4' ]; then 
+    echo "thank you for giving this a shot"
+    exit 0
+else
+    echo "invalid choice restart script"
+fi
