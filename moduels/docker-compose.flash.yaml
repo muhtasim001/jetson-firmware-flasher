@@ -1,0 +1,21 @@
+services:
+  jetpack-flasher:
+    image: ${DOCKER_IMAGE}
+    container_name: JETSON_FLASHER
+    entrypoint: /bin/bash
+    cap_add:
+      - SYS_ADMIN
+      - NET_ADMIN
+    security_opt:
+      - seccomp=unconfined
+    network_mode: host
+    devices:
+      - /dev/bus/usb
+    volumes:
+      - /dev:/dev                   # You can trim this down if needed
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ${CURRENT_DIR}/mount:/home/nvidia-jetson/Downloads
+    environment:
+      - DISPLAY=${DISPLAY}
+    stdin_open: true
+    tty: true

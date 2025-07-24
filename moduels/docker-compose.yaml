@@ -1,8 +1,0 @@
-services: 
-  sdk_manager:
-    image: sdkmanager:latest
-    volums:
-      - ${ENV_DIR}/mnt:/mnt
-      - /tmp/.X11-unix:/tmp/.X11-unix
-      - /dev/input:/dev/input
-    
