@@ -14,8 +14,9 @@ services:
     volumes:
       - /dev:/dev                   # You can trim this down if needed
       - /tmp/.X11-unix:/tmp/.X11-unix
-      - ${CURRENT_DIR}/mount:/home/nvidia-jetson/Downloads
+      - ${CURRENT_DIR}/mount:/home/nvidia
     environment:
       - DISPLAY=${DISPLAY}
     stdin_open: true
     tty: true
+    privileged: true
